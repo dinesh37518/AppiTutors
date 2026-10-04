@@ -1,0 +1,31 @@
+# Apache configuration for UK Tutoring Platform public directory
+Options -Indexes +FollowSymLinks
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=()"
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; object-src 'none';"
+</IfModule>
+
+# Block hidden files, composer files, and sensitive extensions
+<FilesMatch "(^\.|\.(env|log|sql|lock|md|yml|yaml|json)|composer\.(json|lock)|phpunit\.xml)$">
+    Require all denied
+</FilesMatch>
+
+# URL Rewriting for Clean URLs and Front Controller
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # If requested file with .php exists, rewrite internally
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^([^/]+)/?$ $1.php [L]
+
+    # Non-existent files/directories route to front controller
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>

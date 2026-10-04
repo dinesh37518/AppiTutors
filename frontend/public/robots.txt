@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /subjects
+Allow: /pricing
+Allow: /testimonials
+Allow: /contact
+Allow: /blog
+Allow: /newsletter
+Allow: /tutors
+
+# Disallow API and administrative infrastructure
+Disallow: /api/
+Disallow: /bin/
+Disallow: /config/
+Disallow: /database/
+Disallow: /src/
+Disallow: /storage/
+Disallow: /vendor/
