@@ -1,0 +1,83 @@
+<?php
+
+declare(strict_types=1);
+
+require_once dirname(__DIR__, 2) . '/backend/bootstrap/bootstrap.php';
+
+use App\Auth\UserContext;
+use App\Database\Database;
+use App\Services\ManagerService;
+use App\Support\View;
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$db = Database::getConnection();
+$managerService = new ManagerService($db);
+
+$successMessage = '';
+$errorMessage = '';
+
+$currentUserId = $_SESSION['user_id'] ?? null;
+$currentUser = null;
+
+if ($currentUserId !== null) {
+    $stmt = $db->prepare('SELECT * FROM users WHERE id = :id');
+    $stmt->execute([':id' => $currentUserId]);
+    $userRow = $stmt->fetch();
+    if ($userRow) {
+        $currentUser = UserContext::fromDatabaseRow($userRow);
+    }
+}
+
+if ($currentUser === null || !$currentUser->isManager()) {
+    $stmt = $db->query("SELECT * FROM users WHERE role = 'MANAGER' AND status = 'ACTIVE' LIMIT 1");
+    $userRow = $stmt->fetch();
+    if ($userRow) {
+        $currentUser = UserContext::fromDatabaseRow($userRow);
+    }
+}
+
+$actionFilter = $_GET['action'] ?? '';
+$search = $_GET['search'] ?? '';
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 25;
+
+$logs = [];
+$pagination = ['page' => 1, 'per_page' => 25, 'total' => 0, 'total_pages' => 1];
+
+if ($currentUser !== null && $currentUser->isManager()) {
+    try {
+        $result = $managerService->listAuditLogs(
+            $currentUser,
+            [
+                'action' => $actionFilter,
+                'search' => $search,
+            ],
+            $page,
+            $perPage
+        );
+        $logs = $result['items'];
+        $pagination = $result['pagination'];
+    } catch (Throwable $e) {
+        $errorMessage = $e->getMessage();
+    }
+} else {
+    $errorMessage = 'Manager authentication required.';
+}
+
+View::render(
+    'manager-audit',
+    [
+        'logs' => $logs,
+        'pagination' => $pagination,
+        'actionFilter' => $actionFilter,
+        'search' => $search,
+        'currentUser' => $currentUser,
+        'successMessage' => $successMessage,
+        'errorMessage' => $errorMessage,
+    ],
+    'Security & Compliance Audit Ledger — AppTutors UK',
+    'Immutable administrative audit ledger tracking authentication, onboarding decisions, and lifecycle events.'
+);
