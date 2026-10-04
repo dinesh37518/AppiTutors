@@ -10,8 +10,13 @@
 
 > A role-based UK tutoring platform engineered with **PHP 8.2**, **MySQL 8.4**, and **Firebase Authentication**. Built to support secure tutor onboarding, safeguarding through Enhanced Disclosure and Barring Service (DBS) verification workflows, availability scheduling, student/parent lesson booking, administrative governance, blog publishing, and newsletter management.
 
-**Author:** [Dineshkumar M](https://github.com/dinesh37518) (`@dinesh37518`)  
-**Repository:** [https://github.com/dinesh37518/AppiTutors](https://github.com/dinesh37518/AppiTutors)
+<p align="center">
+  <a href="https://github.com/dinesh37518">
+    <img src="https://github.com/dinesh37518.png?size=200" width="90" height="90" style="border-radius: 50%;" alt="Dineshkumar M" />
+  </a><br/>
+  <b>Author:</b> <a href="https://github.com/dinesh37518">Dineshkumar M</a> (<code>@dinesh37518</code>)<br/>
+  <b>Repository:</b> <a href="https://github.com/dinesh37518/AppiTutors">https://github.com/dinesh37518/AppiTutors</a>
+</p>
 
 ---
 
@@ -38,6 +43,7 @@
 - [Frontend Design Status](#frontend-design-status)
 - [Open Client Decisions & Scope Boundaries](#open-client-decisions--scope-boundaries)
 - [Project Roadmap](#project-roadmap)
+- [Author & Maintainer](#author--maintainer)
 - [License](#license)
 
 ---
@@ -758,6 +764,26 @@ To maintain software integrity without making unauthorized business assumptions,
 - [ ] **Frontend Visual Design Polish** — Aesthetic enhancements using the Taste Skill.
 - [ ] **Client Commercial Policy Finalization** — Resolution of the 11 open client decisions.
 - [ ] **Production Infrastructure & Deployment** — Staging/production server provisioning, SSL, and domain DNS setup.
+
+---
+
+## Author & Maintainer
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/dinesh37518">
+        <img src="https://github.com/dinesh37518.png?size=200" width="110" height="110" style="border-radius: 50%;" alt="Dineshkumar M" /><br />
+        <sub><b>Dineshkumar M</b></sub>
+      </a><br />
+      <a href="https://github.com/dinesh37518"><code>@dinesh37518</code></a><br />
+      <span>Lead Developer & Project Architect</span>
+    </td>
+  </tr>
+</table>
+
+- **GitHub Profile:** [@dinesh37518](https://github.com/dinesh37518)
+- **Project Repository:** [AppiTutors](https://github.com/dinesh37518/AppiTutors)
 
 ---
 
