@@ -1,0 +1,39 @@
+{
+    "name": "uk-tutoring/platform",
+    "description": "UK Tutoring Platform Foundation - Official Phase 3",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-curl": "*",
+        "ext-openssl": "*",
+        "ext-mbstring": "*",
+        "kreait/firebase-php": "^7.14"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "backend/src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": [
+                "tests/Unit/",
+                "tests/Integration/",
+                "tests/Security/",
+                "tests/UAT/"
+            ]
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.2.12"
+        },
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {}
+    }
+}
