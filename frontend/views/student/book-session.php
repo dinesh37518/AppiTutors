@@ -106,7 +106,7 @@
                             <option value="">-- Select Available Time Slot --</option>
                             <?php foreach ($availableSlots as $slot): ?>
                                 <option value="<?= e((string)$slot['id']) ?>">
-                                    <?= e($slot['starts_at_london']) ?> to <?= e($slot['ends_at_london']) ?> (UK Time)
+                                    [<?= (!empty($slot['is_group']) ? 'Group: Max ' . ((int)($slot['max_students'] ?? 1)) . ' Students' : '1-to-1') ?>] <?= e($slot['starts_at_london']) ?> to <?= e($slot['ends_at_london']) ?> (UK Time)
                                 </option>
                             <?php endforeach; ?>
                         </select>

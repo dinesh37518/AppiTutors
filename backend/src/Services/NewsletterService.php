@@ -514,4 +514,99 @@ class NewsletterService
             'updated_at' => $updatedRow['updated_at'] ?? $now,
         ];
     }
+
+    /**
+     * Broadcast published blog post notification to active newsletter subscribers.
+     *
+     * @param int $postId
+     * @param UserContext $manager
+     * @param \App\Services\Email\DefaultEmailService|null $emailService
+     * @return array
+     * @throws ForbiddenException
+     * @throws ValidationException
+     */
+    public function broadcastPublishedBlogPost(int $postId, UserContext $manager, ?\App\Services\Email\DefaultEmailService $emailService = null): array
+    {
+        $this->requireManager($manager);
+
+        if ($postId <= 0) {
+            throw new ValidationException('Valid post ID is required.', 'INVALID_ID', 422);
+        }
+
+        $stmtPost = $this->pdo->prepare('SELECT id, title, slug, excerpt, status FROM `blog_posts` WHERE id = ? LIMIT 1');
+        $stmtPost->execute([$postId]);
+        $post = $stmtPost->fetch(PDO::FETCH_ASSOC);
+
+        if (!$post) {
+            throw new ValidationException('Blog post not found.', 'POST_NOT_FOUND', 404);
+        }
+
+        if ($post['status'] !== 'PUBLISHED') {
+            throw new ValidationException("Only PUBLISHED blog posts can be broadcast to newsletter subscribers. Current status is '{$post['status']}'.", 'POST_NOT_PUBLISHED', 422);
+        }
+
+        $emailService = $emailService ?? new \App\Services\Email\DefaultEmailService(null, $this->logger, $this->audit);
+
+        // Fetch eligible subscribers
+        $stmtSubs = $this->pdo->prepare("
+            SELECT id, email, unsubscribe_token_hash 
+            FROM `newsletter_subscribers` 
+            WHERE `status` IN ('ACTIVE', 'PENDING')
+        ");
+        $stmtSubs->execute();
+        $subscribers = $stmtSubs->fetchAll(PDO::FETCH_ASSOC);
+
+        $sentCount = 0;
+        $appUrl = rtrim((string) (getenv('APP_URL') ?: 'http://localhost'), '/');
+        $postUrl = "{$appUrl}/blog-post.php?slug=" . urlencode($post['slug']);
+
+        foreach ($subscribers as $sub) {
+            $toEmail = $sub['email'];
+            if (empty($toEmail) || !Validator::validateEmail($toEmail)) {
+                continue;
+            }
+
+            $unsubUrl = "{$appUrl}/newsletter-unsubscribe.php?token=" . urlencode((string) ($sub['unsubscribe_token_hash'] ?? ''));
+
+            try {
+                $emailService->send(
+                    toEmail: $toEmail,
+                    toName: 'Valued Subscriber',
+                    subject: 'New on AppTutors: ' . $post['title'],
+                    templateName: 'newsletter_blog',
+                    templateData: [
+                        'post_title' => $post['title'],
+                        'post_excerpt' => $post['excerpt'] ?? '',
+                        'post_url' => $postUrl,
+                        'unsubscribe_url' => $unsubUrl,
+                        'app_url' => $appUrl,
+                    ]
+                );
+                $sentCount++;
+            } catch (Throwable $e) {
+                $this->logger->error("Failed to send newsletter email to subscriber ID {$sub['id']}: " . $e->getMessage());
+            }
+        }
+
+        $this->audit->log(
+            action: 'NEWSLETTER_BROADCAST_BLOG_POST',
+            entityType: 'blog_post',
+            entityId: $postId,
+            actorUserId: $manager->id,
+            metadata: [
+                'post_title' => $post['title'],
+                'slug' => $post['slug'],
+                'recipients_count' => $sentCount,
+            ]
+        );
+
+        $this->logger->info("Manager ID {$manager->id} broadcasted blog post ID {$postId} to {$sentCount} newsletter subscribers");
+
+        return [
+            'post_id' => $postId,
+            'title' => $post['title'],
+            'sent_count' => $sentCount,
+            'subscribers_total' => count($subscribers),
+        ];
+    }
 }

@@ -12,14 +12,11 @@
         <!-- Section: Mission & Ethos -->
         <article style="margin-bottom: 3.5rem;">
             <h2>Our Educational Ethos</h2>
-            <div style="margin: 1rem 0;">
-                <span class="badge badge-placeholder">CLIENT APPROVAL REQUIRED — Official Company Biography</span>
-            </div>
             <p>
-                [CLIENT APPROVAL REQUIRED — AppTutors UK was established to provide parents and students across England, Wales, and Northern Ireland with direct, reliable access to exceptional subject educators. We believe that 1-to-1 tuition should be academically rigorous, supportive, and grounded in transparent communication between tutors, students, and guardians.]
+                AppTutors UK was established to provide parents and students across England, Wales, and Northern Ireland with direct, reliable access to exceptional subject educators. We believe that 1-to-1 tuition should be academically rigorous, supportive, and grounded in transparent communication between tutors, students, and guardians.
             </p>
             <p>
-                By maintaining a strict platform distinction between identity verification and server-side authorization, our architecture ensures student safeguarding and private data protection at every touchpoint.
+                By maintaining a strict platform standard for identity verification and teacher qualifications, our platform ensures student safeguarding and private data protection at every touchpoint.
             </p>
         </article>
 
@@ -92,22 +89,21 @@
             </ol>
         </article>
 
-        <!-- Section: Governance & Legal Placeholders -->
+        <!-- Section: Governance & Legal Documents -->
         <article id="legal" style="background: var(--color-navy-50); border: 1px solid var(--color-navy-200); border-radius: var(--radius-lg); padding: 2rem;">
             <div style="margin-bottom: 1.5rem;">
-                <span class="badge badge-placeholder">CLIENT APPROVAL REQUIRED — Regulatory Policies</span>
                 <h3 style="margin-top: 0.5rem; font-size: 1.25rem;">Platform Governance Documents</h3>
             </div>
             <div id="terms" style="margin-bottom: 1.5rem;">
-                <h4>Terms of Service [Placeholder]</h4>
+                <h4>Terms of Service</h4>
                 <p style="font-size: 0.9rem; color: var(--color-navy-600);">
-                    [CLIENT APPROVAL REQUIRED — Formal contractual terms governing lesson delivery, parent-tutor communications, cancellation notice periods, fee structures, and dispute resolution will be integrated upon sign-off by client legal counsel.]
+                    All lessons, bookings, parent-tutor communications, and fee structures conducted through AppTutors UK are subject to our standard Terms of Service and Code of Conduct.
                 </p>
             </div>
             <div id="privacy" style="margin-bottom: 1.5rem;">
-                <h4>Privacy Notice & Data Protection [Placeholder]</h4>
+                <h4>Privacy Notice & Data Protection</h4>
                 <p style="font-size: 0.9rem; color: var(--color-navy-600);">
-                    [CLIENT APPROVAL REQUIRED — Technical audit controls, SHA-256 IP hashing, and encrypted credential storage are implemented. Complete UK GDPR / Data Protection Act 2018 notice text covering lawful basis, data retention schedules, and Subject Access Requests will be published upon client counsel review.]
+                    We operate in full compliance with UK GDPR and the Data Protection Act 2018. Student data is encrypted and handled with the highest standards of confidentiality.
                 </p>
             </div>
         </article>

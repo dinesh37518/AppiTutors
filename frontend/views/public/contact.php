@@ -105,9 +105,30 @@
                     <div style="font-size: 0.875rem; font-weight: 600; color: var(--color-navy-950);">
                         Email: <code>safeguarding@apptutors.co.uk</code>
                     </div>
-                    <div style="margin-top: 0.5rem;">
-                        <span class="badge badge-placeholder">CLIENT APPROVAL REQUIRED</span>
+                </div>
+
+                <!-- Contact Manager WhatsApp Option -->
+                <div class="card" style="padding: 1.75rem; border: 1px solid var(--color-emerald-500); background: #f0fdf4;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <span style="font-size: 1.5rem;" aria-hidden="true">&#128172;</span>
+                        <h3 style="font-size: 1.15rem; margin: 0; color: #166534;">Contact Manager</h3>
                     </div>
+                    <p style="font-size: 0.9rem; color: #15803d; margin-bottom: 1rem; line-height: 1.5;">
+                        Connect directly with the platform admissions manager via WhatsApp for urgent enquiries, tutor onboarding questions, or booking assistance.
+                    </p>
+                    <?php
+                    $waNumber = preg_replace('/[^0-9]/', '', $managerWhatsApp ?? '447700900000');
+                    $waUrl = 'https://wa.me/' . $waNumber . '?text=' . urlencode('Hello AppTutors Manager, I have an inquiry regarding UK tutoring services.');
+                    ?>
+                    <a href="<?= htmlspecialchars($waUrl, ENT_QUOTES, 'UTF-8') ?>" 
+                       id="btn-contact-manager-whatsapp"
+                       target="_blank" 
+                       rel="noopener noreferrer" 
+                       class="btn" 
+                       style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; background: #25D366; color: #ffffff; font-weight: 600; padding: 0.75rem 1rem; border-radius: var(--radius-sm); text-decoration: none; border: none; text-align: center;">
+                        <span>&#128172;</span>
+                        <span>Chat with Manager on WhatsApp</span>
+                    </a>
                 </div>
 
                 <div class="card" style="padding: 1.75rem; background: var(--color-navy-50);">
@@ -115,7 +136,7 @@
                     <p style="font-size: 0.875rem; color: var(--color-navy-600); margin-bottom: 0.5rem;">
                         Automated confirmations and lesson updates are dispatched via our server-side <code>EmailService</code> abstraction.
                     </p>
-                    <span class="badge badge-open-decision">OPEN CLIENT DECISION — SMTP Provider</span>
+                    <span class="badge badge-open-decision">EMAILJS & LOG TRANSLATION</span>
                 </div>
             </div>
         </div>

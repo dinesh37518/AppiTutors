@@ -14,8 +14,10 @@
                         Define your available lesson windows in UK London time (Europe/London GMT/BST).
                     </p>
                 </div>
-                <div>
-                    <a href="/tutor-profile.php" class="btn btn-secondary btn-sm">&larr; Back to Profile</a>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <a href="/tutor-bookings.php" class="btn btn-outline btn-sm">Lesson Requests</a>
+                    <a href="/tutor-blog.php" class="btn btn-outline btn-sm">Blog Articles</a>
+                    <a href="/tutor-profile.php" class="btn btn-secondary btn-sm">&larr; Profile</a>
                 </div>
             </div>
         </div>
@@ -80,7 +82,24 @@
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <!-- Slot Format & Capacity: 1-to-1 vs 1-to-Many -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1.25rem; padding: 1rem; background: var(--color-navy-50); border: 1px solid var(--color-navy-200); border-radius: var(--radius-sm);">
+                    <div class="form-group" style="margin: 0;">
+                        <label for="slot_type" class="form-label form-label-required" style="font-weight: 600; display: block; margin-bottom: 0.35rem;">Class Format</label>
+                        <select id="slot_type" name="slot_type" class="form-select" onchange="toggleCapacityInput(this.value)" style="width: 100%;">
+                            <option value="one_to_one">1-to-1 Slot (Individual Student)</option>
+                            <option value="one_to_many">1-to-Many Slot (Group Class)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="group_capacity_container" style="margin: 0; display: none;">
+                        <label for="max_students" class="form-label form-label-required" style="font-weight: 600; display: block; margin-bottom: 0.35rem;">Maximum Students (Capacity)</label>
+                        <input type="number" id="max_students" name="max_students" class="form-input" min="2" max="50" value="5" style="width: 100%;">
+                        <div style="font-size: 0.775rem; color: var(--color-navy-600); margin-top: 0.25rem;">Slot accepts bookings until capacity is filled.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; flex-wrap: wrap; gap: 1rem;">
                     <div class="form-hint" style="margin: 0;">
                         Adjacent slots (e.g. 16:00–17:00 and 17:00–18:00) are permitted without conflict.
                     </div>
@@ -90,6 +109,15 @@
                 </div>
             </form>
         </div>
+
+        <script>
+        function toggleCapacityInput(type) {
+            const container = document.getElementById('group_capacity_container');
+            if (container) {
+                container.style.display = (type === 'one_to_many') ? 'block' : 'none';
+            }
+        }
+        </script>
 
         <!-- Current Availability Slots Table -->
         <div class="card" style="padding: 2.25rem; box-shadow: var(--shadow-md);">
@@ -109,7 +137,7 @@
                         <thead>
                             <tr style="border-bottom: 2px solid var(--color-navy-200); text-align: left; font-size: 0.875rem; color: var(--color-navy-600);">
                                 <th style="padding: 0.75rem 0.5rem;">UK Local Window (London)</th>
-                                <th style="padding: 0.75rem 0.5rem;">UTC Database Timestamp</th>
+                                <th style="padding: 0.75rem 0.5rem;">Class Format</th>
                                 <th style="padding: 0.75rem 0.5rem;">Season</th>
                                 <th style="padding: 0.75rem 0.5rem;">Status</th>
                                 <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
@@ -121,8 +149,17 @@
                                     <td style="padding: 0.85rem 0.5rem; font-weight: 600; color: var(--color-navy-900);">
                                         <?= e($slot['starts_at_london']) ?> &ndash; <?= e(substr($slot['ends_at_london'], -5)) ?>
                                     </td>
-                                    <td style="padding: 0.85rem 0.5rem; color: var(--color-navy-600); font-family: monospace; font-size: 0.85rem;">
-                                        <?= e($slot['starts_at_utc']) ?>
+                                    <td style="padding: 0.85rem 0.5rem;">
+                                        <?php $maxStu = (int) ($slot['max_students'] ?? 1); ?>
+                                        <?php if ($maxStu > 1): ?>
+                                            <span class="badge badge-primary" style="font-size: 0.75rem;">
+                                                1-to-Many (Max <?= $maxStu ?>)
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge badge-secondary" style="font-size: 0.75rem;">
+                                                1-to-1 Individual
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                     <td style="padding: 0.85rem 0.5rem;">
                                         <span class="badge <?= !empty($slot['is_bst']) ? 'badge-primary' : 'badge-placeholder' ?>" style="font-size: 0.75rem;">

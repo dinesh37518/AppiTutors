@@ -10,4 +10,5 @@ return [
     'debug' => (bool) Env::get('APP_DEBUG', true),
     'url' => Env::get('APP_URL', 'http://localhost'),
     'timezone' => Env::get('APP_TIMEZONE', 'Europe/London'),
+    'manager_whatsapp' => Env::get('MANAGER_WHATSAPP', '447700900000'),
 ];

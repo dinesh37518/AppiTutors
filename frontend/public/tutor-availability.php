@@ -56,18 +56,35 @@ if ($currentUser !== null) {
         if (!Csrf::validateToken($csrfToken)) {
             $errorMessage = 'CSRF validation failed. Please refresh and try again.';
         } else {
-            $action = $_POST['action'] ?? 'create';
+            $action = $_POST['form_action'] ?? $_POST['action'] ?? 'create';
 
-            if ($action === 'create') {
+            if ($action === 'create_slot' || $action === 'create') {
                 try {
-                    $startsAt = (string)($_POST['starts_at'] ?? '');
-                    $endsAt = (string)($_POST['ends_at'] ?? '');
-                    $availabilityService->createSlot($currentUser->id, $startsAt, $endsAt, $currentUser);
+                    if (!empty($_POST['slot_date']) && !empty($_POST['slot_start']) && !empty($_POST['slot_end'])) {
+                        $startsAt = trim((string)$_POST['slot_date']) . ' ' . trim((string)$_POST['slot_start']) . ':00';
+                        $endsAt = trim((string)$_POST['slot_date']) . ' ' . trim((string)$_POST['slot_end']) . ':00';
+                    } else {
+                        $startsAt = (string)($_POST['starts_at'] ?? '');
+                        $endsAt = (string)($_POST['ends_at'] ?? '');
+                    }
+
+                    $slotType = (string)($_POST['slot_type'] ?? 'one_to_one');
+                    $maxStudents = ($slotType === 'one_to_many') ? max(2, (int)($_POST['max_students'] ?? 5)) : 1;
+
+                    $availabilityService->createSlot(
+                        $currentUser->id,
+                        $startsAt,
+                        $endsAt,
+                        'Europe/London',
+                        AvailabilityService::STATUS_PUBLISHED,
+                        $currentUser,
+                        $maxStudents
+                    );
                     $successMessage = 'Availability slot published successfully.';
                 } catch (Throwable $e) {
                     $errorMessage = $e->getMessage();
                 }
-            } elseif ($action === 'delete') {
+            } elseif ($action === 'delete_slot' || $action === 'delete') {
                 try {
                     $slotId = (int)($_POST['slot_id'] ?? 0);
                     $availabilityService->deleteSlot($slotId, $currentUser);

@@ -24,7 +24,7 @@
 
     <!-- Top Trust & Announcement Bar -->
     <aside class="site-banner" aria-label="Announcement">
-        <span>UK Curriculum Specialists • All Tutors Enhanced DBS Checked • Dedicated 1-to-1 Learning</span>
+        <span>UK Curriculum Specialists • All Tutors Enhanced DBS Checked • Dedicated 1-to-1 Learning • <a href="/register.php?type=tutor" style="color: #93c5fd; text-decoration: underline; font-weight: 600;">Apply as a Tutor &rarr;</a></span>
     </aside>
 
 <?php
@@ -46,6 +46,7 @@ $userName = $_SESSION['user_name'] ?? 'User';
                 <ul class="nav-links">
                     <li><a href="/" class="nav-link <?= ($currentUri === '/' || $currentUri === '/index.php') ? 'active' : '' ?>">Home</a></li>
                     <li><a href="/tutors.php" class="nav-link <?= str_starts_with($currentUri, '/tutors') ? 'active' : '' ?>">Find a Tutor</a></li>
+                    <li><a href="/register.php?type=tutor" class="nav-link <?= (str_contains($currentUri, 'register') && (($_GET['type'] ?? '') === 'tutor')) ? 'active' : '' ?>" style="color: var(--color-primary-600); font-weight: 600;">Apply as a Tutor</a></li>
                     <li><a href="/about.php" class="nav-link <?= str_starts_with($currentUri, '/about') ? 'active' : '' ?>">About & DBS</a></li>
                     <li><a href="/subjects.php" class="nav-link <?= str_starts_with($currentUri, '/subjects') ? 'active' : '' ?>">Subjects</a></li>
                     <li><a href="/pricing.php" class="nav-link <?= str_starts_with($currentUri, '/pricing') ? 'active' : '' ?>">Pricing</a></li>
@@ -75,6 +76,7 @@ $userName = $_SESSION['user_name'] ?? 'User';
             <ul class="mobile-nav-links">
                 <li><a href="/" class="mobile-nav-link <?= ($currentUri === '/' || $currentUri === '/index.php') ? 'active' : '' ?>">Home</a></li>
                 <li><a href="/tutors.php" class="mobile-nav-link <?= str_starts_with($currentUri, '/tutors') ? 'active' : '' ?>">Find a Tutor</a></li>
+                <li><a href="/register.php?type=tutor" class="mobile-nav-link" style="color: var(--color-primary-600); font-weight: 600;">Apply as a Tutor</a></li>
                 <li><a href="/about.php" class="mobile-nav-link <?= str_starts_with($currentUri, '/about') ? 'active' : '' ?>">About & DBS Safeguarding</a></li>
                 <li><a href="/subjects.php" class="mobile-nav-link <?= str_starts_with($currentUri, '/subjects') ? 'active' : '' ?>">Curriculum & Subjects</a></li>
                 <li><a href="/pricing.php" class="mobile-nav-link <?= str_starts_with($currentUri, '/pricing') ? 'active' : '' ?>">Pricing & Fee Structure</a></li>

@@ -162,20 +162,36 @@
                                             <span class="badge badge-open-decision" style="font-size: 0.75rem;">BLOCKED</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td style="padding: 1rem 0.5rem; text-align: right;">
+                                    <td style="padding: 1rem 0.5rem; text-align: right; position: relative;">
                                         <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
                                             <!-- Approval Workflow Form -->
-                                            <form method="POST" action="/manager-tutors.php" style="display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end;">
+                                            <form method="POST" action="/manager-tutors.php" style="display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; align-items: center;">
                                                 <input type="hidden" name="csrf_token" value="<?= e($csrfToken ?? '') ?>">
                                                 <input type="hidden" name="tutor_id" value="<?= (int)$t['id'] ?>">
 
                                                 <?php if ($approvalStatus === 'PENDING'): ?>
-                                                    <button type="submit" name="action" value="APPROVE" class="btn btn-primary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;">
+                                                    <button type="submit" name="action" value="APPROVE" class="btn btn-primary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;" id="btn-approve-tutor-<?= (int)$t['id'] ?>">
                                                         Approve
                                                     </button>
-                                                    <button type="submit" name="action" value="REJECT" class="btn btn-danger btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;" onclick="return confirm('Reject this tutor application?');">
-                                                        Reject
-                                                    </button>
+                                                    
+                                                    <details style="display: inline-block; text-align: left;">
+                                                        <summary class="btn btn-danger btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.65rem; cursor: pointer; list-style: none;" id="btn-reject-menu-<?= (int)$t['id'] ?>">
+                                                            Reject &dtrif;
+                                                        </summary>
+                                                        <div style="position: absolute; right: 0.5rem; margin-top: 0.25rem; background: #fff; border: 1px solid var(--color-navy-300); box-shadow: var(--shadow-lg); padding: 0.75rem; border-radius: var(--radius-sm); width: 250px; z-index: 100; text-align: left;">
+                                                            <div style="font-weight: 700; font-size: 0.8rem; color: #9b2c2c; margin-bottom: 0.35rem;">Select Rejection Reason:</div>
+                                                            <select name="reason_preset" style="width: 100%; font-size: 0.8rem; padding: 0.35rem; margin-bottom: 0.35rem; border: 1px solid var(--color-navy-300); border-radius: var(--radius-sm);">
+                                                                <option value="Certificate missing">Certificate missing</option>
+                                                                <option value="Fake ID">Fake ID</option>
+                                                                <option value="Incomplete background check">Incomplete background check</option>
+                                                                <option value="Other">Other manager reason</option>
+                                                            </select>
+                                                            <input type="text" name="reason_custom" placeholder="Additional details..." style="width: 100%; box-sizing: border-box; font-size: 0.8rem; padding: 0.35rem; margin-bottom: 0.5rem; border: 1px solid var(--color-navy-300); border-radius: var(--radius-sm);">
+                                                            <button type="submit" name="action" value="REJECT" class="btn btn-danger btn-sm" style="width: 100%; font-size: 0.8rem; padding: 0.35rem;" id="btn-confirm-reject-<?= (int)$t['id'] ?>" onclick="return confirm('Confirm rejection of this tutor application?');">
+                                                                Confirm Rejection
+                                                            </button>
+                                                        </div>
+                                                    </details>
                                                 <?php elseif ($approvalStatus === 'APPROVED'): ?>
                                                     <button type="submit" name="action" value="SUSPEND" class="btn btn-warning btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;" onclick="return confirm('Suspend this approved tutor?');">
                                                         Suspend

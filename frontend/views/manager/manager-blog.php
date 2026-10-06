@@ -2,8 +2,14 @@
 /**
  * Manager Blog & Editorial Management View
  */
-$e = fn($v) => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-$statuses = ['ALL' => 'All Statuses', 'DRAFT' => 'Drafts', 'PUBLISHED' => 'Published', 'ARCHIVED' => 'Archived'];
+$statuses = [
+    'ALL' => 'All Statuses',
+    'DRAFT' => 'Drafts',
+    'SUBMITTED' => 'Submitted / Review',
+    'APPROVED' => 'Approved',
+    'PUBLISHED' => 'Published',
+    'ARCHIVED' => 'Archived',
+];
 ?>
 <div class="container section">
     <div style="max-width: 1150px; margin: 0 auto;">
@@ -205,6 +211,37 @@ $statuses = ['ALL' => 'All Statuses', 'DRAFT' => 'Drafts', 'PUBLISHED' => 'Publi
                                                 <a href="/blog-post.php?slug=<?= urlencode($p['slug']) ?>" target="_blank" class="btn btn-secondary btn-sm" title="View live public article">
                                                     Live &nearr;
                                                 </a>
+
+                                                <!-- Send Newsletter Action -->
+                                                <form action="/manager-blog.php" method="POST" style="display: inline;" onsubmit="return confirm('Broadcast newsletter notification for this article to all subscribers?');">
+                                                    <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                                                    <input type="hidden" name="action" value="SEND_NEWSLETTER">
+                                                    <input type="hidden" name="post_id" value="<?= $e($p['id']) ?>">
+                                                    <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--color-primary-700); border-color: var(--color-primary-300);" title="Broadcast email newsletter to subscribers" id="btn-broadcast-<?= $e($p['id']) ?>">
+                                                        &#9993; Send Newsletter
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+
+                                            <!-- Moderation Approve / Reject for Submitted Posts -->
+                                            <?php if ($p['status'] === 'SUBMITTED'): ?>
+                                                <form action="/manager-blog.php" method="POST" style="display: inline;">
+                                                    <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                                                    <input type="hidden" name="action" value="APPROVE">
+                                                    <input type="hidden" name="post_id" value="<?= $e($p['id']) ?>">
+                                                    <button type="submit" class="btn btn-primary btn-sm" style="background-color: var(--color-emerald-600); border-color: var(--color-emerald-600);" id="btn-approve-post-<?= $e($p['id']) ?>">
+                                                        Approve
+                                                    </button>
+                                                </form>
+
+                                                <form action="/manager-blog.php" method="POST" style="display: inline;" onsubmit="return confirm('Reject this blog submission?');">
+                                                    <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
+                                                    <input type="hidden" name="action" value="REJECT">
+                                                    <input type="hidden" name="post_id" value="<?= $e($p['id']) ?>">
+                                                    <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--color-rose-600); border-color: var(--color-rose-300);" id="btn-reject-post-<?= $e($p['id']) ?>">
+                                                        Reject
+                                                    </button>
+                                                </form>
                                             <?php endif; ?>
 
                                             <!-- Edit -->
@@ -218,7 +255,7 @@ $statuses = ['ALL' => 'All Statuses', 'DRAFT' => 'Drafts', 'PUBLISHED' => 'Publi
                                                     <input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>">
                                                     <input type="hidden" name="action" value="PUBLISH">
                                                     <input type="hidden" name="post_id" value="<?= $e($p['id']) ?>">
-                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                    <button type="submit" class="btn btn-primary btn-sm" id="btn-publish-post-<?= $e($p['id']) ?>">
                                                         Publish
                                                     </button>
                                                 </form>

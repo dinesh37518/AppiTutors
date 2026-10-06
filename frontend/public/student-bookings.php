@@ -62,9 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null) {
 }
 
 $bookings = [];
+$bookingNotes = [];
 if ($currentUser !== null) {
     try {
         $bookings = $bookingService->listBookings($currentUser);
+        $notesService = new \App\Services\LessonNotesService($db);
+        foreach ($bookings as $b) {
+            $bookingNotes[$b['id']] = $notesService->getNotesForBooking((int)$b['id'], $currentUser);
+        }
     } catch (Throwable $e) {
         $errorMessage = $e->getMessage();
     }
@@ -76,6 +81,7 @@ View::render(
     'student-bookings',
     [
         'bookings' => $bookings,
+        'bookingNotes' => $bookingNotes,
         'currentUser' => $currentUser,
         'csrfToken' => $csrfToken,
         'successMessage' => $successMessage,

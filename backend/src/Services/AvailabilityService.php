@@ -59,9 +59,10 @@ class AvailabilityService
      * @param int $tutorUserId
      * @param string $startsAt
      * @param string $endsAt
-     * @param string $timezone 'Europe/London' or 'UTC'
-     * @param string $status Default 'PUBLISHED'
+     * @param mixed $arg4 Timezone ('Europe/London' or 'UTC') or UserContext
+     * @param mixed $arg5 Status (default 'PUBLISHED') or UserContext
      * @param UserContext|null $currentUser
+     * @param int $maxStudents 1
      * @return array
      * @throws ForbiddenException
      * @throws BookabilityException
@@ -74,7 +75,8 @@ class AvailabilityService
         string $endsAt,
         mixed $arg4 = 'Europe/London',
         mixed $arg5 = self::STATUS_PUBLISHED,
-        ?UserContext $currentUser = null
+        ?UserContext $currentUser = null,
+        int $maxStudents = 1
     ): array {
         $timezone = 'Europe/London';
         $status = self::STATUS_PUBLISHED;
@@ -89,6 +91,10 @@ class AvailabilityService
             $currentUser = $arg5;
         } elseif (is_string($arg5)) {
             $status = $arg5;
+        }
+
+        if ($maxStudents < 1) {
+            $maxStudents = 1;
         }
 
         // 1. Authorization & Ownership
@@ -124,10 +130,10 @@ class AvailabilityService
 
             $stmt = $this->pdo->prepare('
                 INSERT INTO `availability_slots` 
-                (`tutor_user_id`, `starts_at_utc`, `ends_at_utc`, `status`, `created_at`, `updated_at`)
-                VALUES (?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                (`tutor_user_id`, `starts_at_utc`, `ends_at_utc`, `status`, `max_students`, `created_at`, `updated_at`)
+                VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())
             ');
-            $stmt->execute([$tutorUserId, $startsAtUtc, $endsAtUtc, $status]);
+            $stmt->execute([$tutorUserId, $startsAtUtc, $endsAtUtc, $status, $maxStudents]);
             $slotId = (int) $this->pdo->lastInsertId();
 
             $this->pdo->commit();
@@ -160,6 +166,7 @@ class AvailabilityService
             'starts_at_utc' => $startsAtUtc,
             'ends_at_utc' => $endsAtUtc,
             'status' => $status,
+            'max_students' => $maxStudents,
             'created_at' => Timezone::nowUtc(),
             'updated_at' => Timezone::nowUtc(),
         ]);
@@ -213,7 +220,7 @@ class AvailabilityService
         }
 
         if ((int) $existing['tutor_user_id'] !== $tutorUserId) {
-            throw new ForbiddenException('Slot does not belong to specified tutor.', 'UNAUTHORIZED_RESOURCE_OWNERSHIP', 403);
+            throw new ForbiddenException('Slot does not belong to specified tutor.', 'UNAUTHORIZED_RESOURCE_OWNERSHIP');
         }
 
         if ($existing['status'] === self::STATUS_BOOKED) {
@@ -277,7 +284,7 @@ class AvailabilityService
      * Delete an unbooked availability slot.
      *
      * @param int $slotId
-     * @param int $tutorUserId
+     * @param mixed $tutorUserIdOrUser Tutor user ID or UserContext
      * @param UserContext|null $currentUser
      * @return bool
      * @throws ForbiddenException
@@ -309,7 +316,7 @@ class AvailabilityService
         }
 
         if ($slotOwnerId !== $tutorUserId) {
-            throw new ForbiddenException('Slot does not belong to specified tutor.', 'UNAUTHORIZED_RESOURCE_OWNERSHIP', 403);
+            throw new ForbiddenException('Slot does not belong to specified tutor.', 'UNAUTHORIZED_RESOURCE_OWNERSHIP');
         }
 
         if ($slot['status'] === self::STATUS_BOOKED) {
@@ -507,6 +514,8 @@ class AvailabilityService
             'ends_at_london_iso' => Timezone::utcToLondon($endsUtc, 'Y-m-d H:i:s'),
             'is_bst' => Timezone::isBst($startsUtc),
             'status' => $row['status'],
+            'max_students' => (int) ($row['max_students'] ?? 1),
+            'is_group' => ((int) ($row['max_students'] ?? 1)) > 1,
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
         ];

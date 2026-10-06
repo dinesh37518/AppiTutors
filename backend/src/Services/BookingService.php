@@ -146,7 +146,7 @@ class BookingService
         try {
             // Acquire exclusive row lock on target availability slot
             $stmtSlot = $this->pdo->prepare('
-                SELECT id, tutor_user_id, starts_at_utc, ends_at_utc, status 
+                SELECT id, tutor_user_id, starts_at_utc, ends_at_utc, status, max_students 
                 FROM `availability_slots` 
                 WHERE id = ? 
                 FOR UPDATE
@@ -187,7 +187,29 @@ class BookingService
                 );
             }
 
-            // 5e. Verify slot starts in the future (UTC)
+            // 5e. Concurrency-safe 1-to-many capacity verification
+            $maxStudents = (int) ($slot['max_students'] ?? 1);
+            if ($maxStudents < 1) {
+                $maxStudents = 1;
+            }
+
+            $stmtCount = $this->pdo->prepare("
+                SELECT COUNT(*) 
+                FROM `bookings` 
+                WHERE `slot_id` = ? AND `status` IN ('PENDING', 'CONFIRMED')
+            ");
+            $stmtCount->execute([$slotId]);
+            $activeCount = (int) $stmtCount->fetchColumn();
+
+            if ($activeCount >= $maxStudents) {
+                throw new ValidationException(
+                    "Availability slot has reached maximum capacity of {$maxStudents} student(s).",
+                    'SLOT_CAPACITY_REACHED',
+                    409
+                );
+            }
+
+            // 5f. Verify slot starts in the future (UTC)
             $nowUtc = Timezone::nowUtc();
             if ($slot['starts_at_utc'] <= $nowUtc) {
                 throw new ValidationException(
@@ -197,7 +219,7 @@ class BookingService
                 );
             }
 
-            // 5f. Insert PENDING booking record
+            // 5g. Insert PENDING booking record
             $stmtBooking = $this->pdo->prepare('
                 INSERT INTO `bookings` (
                     `student_user_id`, `child_id`, `tutor_user_id`, `slot_id`,
@@ -217,12 +239,14 @@ class BookingService
             ]);
             $bookingId = (int) $this->pdo->lastInsertId();
 
-            // 5g. Record initial state in booking_status_history
+            // 5h. Record initial state in booking_status_history
             $metadataJson = json_encode([
                 'slot_id' => $slotId,
                 'child_id' => $childId,
                 'starts_at_utc' => $slot['starts_at_utc'],
                 'ends_at_utc' => $slot['ends_at_utc'],
+                'capacity' => $maxStudents,
+                'current_student_number' => $activeCount + 1,
             ], JSON_UNESCAPED_SLASHES);
 
             $stmtHistory = $this->pdo->prepare('
@@ -238,16 +262,19 @@ class BookingService
                 $metadataJson,
             ]);
 
-            // 5h. Update availability slot state to BOOKED
-            $stmtUpdateSlot = $this->pdo->prepare('
-                UPDATE `availability_slots` 
-                SET `status` = ?, `updated_at` = UTC_TIMESTAMP() 
-                WHERE `id` = ?
-            ');
-            $stmtUpdateSlot->execute([
-                AvailabilityService::STATUS_BOOKED,
-                $slotId,
-            ]);
+            // 5i. Update availability slot state: Mark BOOKED only if capacity is full
+            $newActiveCount = $activeCount + 1;
+            if ($newActiveCount >= $maxStudents) {
+                $stmtUpdateSlot = $this->pdo->prepare('
+                    UPDATE `availability_slots` 
+                    SET `status` = ?, `updated_at` = UTC_TIMESTAMP() 
+                    WHERE `id` = ?
+                ');
+                $stmtUpdateSlot->execute([
+                    AvailabilityService::STATUS_BOOKED,
+                    $slotId,
+                ]);
+            }
 
             // Commit transaction
             $this->pdo->commit();
@@ -397,6 +424,14 @@ class BookingService
             ];
         }, $history);
 
+        $meetingLink = null;
+        foreach (array_reverse($parsedHistory) as $h) {
+            if (!empty($h['metadata']['meeting_link'])) {
+                $meetingLink = (string) $h['metadata']['meeting_link'];
+                break;
+            }
+        }
+
         return [
             'id' => (int) $row['id'],
             'student_user_id' => (int) $row['student_user_id'],
@@ -418,6 +453,7 @@ class BookingService
             'proposed_ends_at_utc' => $row['proposed_ends_at_utc'],
             'confirmed_starts_at_utc' => $row['confirmed_starts_at_utc'],
             'confirmed_ends_at_utc' => $row['confirmed_ends_at_utc'],
+            'meeting_link' => $meetingLink,
             'created_at' => $row['created_at'],
             'updated_at' => $row['updated_at'],
             'history' => $parsedHistory,
@@ -446,7 +482,8 @@ class BookingService
                 stu.display_name AS student_name,
                 tut.display_name AS tutor_name,
                 ch.first_name AS child_first_name, ch.last_name AS child_last_name,
-                ch.school_year AS child_school_year, ch.curriculum AS child_curriculum
+                ch.school_year AS child_school_year, ch.curriculum AS child_curriculum,
+                (SELECT JSON_UNQUOTE(JSON_EXTRACT(metadata_json, "$.meeting_link")) FROM booking_status_history WHERE booking_id = b.id AND metadata_json LIKE "%meeting_link%" ORDER BY id DESC LIMIT 1) AS meeting_link
             FROM `bookings` b
             JOIN `users` stu ON b.student_user_id = stu.id
             JOIN `users` tut ON b.tutor_user_id = tut.id
@@ -508,6 +545,7 @@ class BookingService
                 'proposed_ends_at_utc' => $row['proposed_ends_at_utc'],
                 'confirmed_starts_at_utc' => $row['confirmed_starts_at_utc'],
                 'confirmed_ends_at_utc' => $row['confirmed_ends_at_utc'],
+                'meeting_link' => !empty($row['meeting_link']) ? (string) $row['meeting_link'] : null,
                 'created_at' => $row['created_at'],
                 'updated_at' => $row['updated_at'],
             ];
@@ -526,8 +564,12 @@ class BookingService
      * @throws ForbiddenException
      * @throws ValidationException
      */
-    public function confirmBooking(int $bookingId, ?UserContext $currentUser, ?string $reason = null): array
-    {
+    public function confirmBooking(
+        int $bookingId,
+        ?UserContext $currentUser,
+        ?string $reason = null,
+        ?string $meetingLink = null
+    ): array {
         Authorization::requireAuthenticatedUser($currentUser);
         Authorization::requireActiveStatus($currentUser);
 
@@ -572,11 +614,16 @@ class BookingService
             ');
             $stmtUpdate->execute([self::STATUS_CONFIRMED, $bookingId]);
 
-            // Record status history
+            // Record status history with meeting link metadata if provided
+            $metadataJson = !empty($meetingLink) ? json_encode([
+                'meeting_link' => trim($meetingLink),
+                'confirmed_by_user_id' => $currentUser->id,
+            ], JSON_UNESCAPED_SLASHES) : null;
+
             $stmtHistory = $this->pdo->prepare('
                 INSERT INTO `booking_status_history` (
                     `booking_id`, `changed_by_user_id`, `old_status`, `new_status`, `reason`, `metadata_json`, `created_at`
-                ) VALUES (?, ?, ?, ?, ?, NULL, UTC_TIMESTAMP())
+                ) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())
             ');
             $stmtHistory->execute([
                 $bookingId,
@@ -584,6 +631,7 @@ class BookingService
                 self::STATUS_PENDING,
                 self::STATUS_CONFIRMED,
                 $reason ?? 'Booking request accepted and confirmed by tutor',
+                $metadataJson,
             ]);
 
             $this->pdo->commit();
@@ -598,6 +646,7 @@ class BookingService
                     'old_status' => self::STATUS_PENDING,
                     'new_status' => self::STATUS_CONFIRMED,
                     'reason' => $reason,
+                    'has_meeting_link' => !empty($meetingLink),
                 ]
             );
 
@@ -618,6 +667,7 @@ class BookingService
                         'tutor_name' => $bookingDetails['tutor_name'],
                         'child_name' => $bookingDetails['child_name'],
                         'slot_time' => $slotDisplay,
+                        'meeting_link' => $meetingLink ?? ($bookingDetails['meeting_link'] ?? null),
                         'booking_id' => $bookingId,
                     ]
                 );
@@ -913,7 +963,7 @@ class BookingService
         }
 
         $stmt = $this->pdo->prepare('
-            SELECT id, tutor_user_id, starts_at_utc, ends_at_utc, status 
+            SELECT id, tutor_user_id, starts_at_utc, ends_at_utc, status, max_students 
             FROM `availability_slots` 
             WHERE tutor_user_id = ? 
               AND status = ? 
@@ -932,7 +982,115 @@ class BookingService
                 'starts_at_london' => Timezone::utcToLondon($row['starts_at_utc']),
                 'ends_at_london' => Timezone::utcToLondon($row['ends_at_utc']),
                 'status' => $row['status'],
+                'max_students' => (int) ($row['max_students'] ?? 1),
+                'is_group' => ((int) ($row['max_students'] ?? 1)) > 1,
             ];
         }, $rows);
+    }
+
+    /**
+     * Automatically cancel bookings that have remained in PENDING status without response for 24+ hours.
+     * Transitions: PENDING -> SYSTEM_CANCELLED.
+     * Concurrency-safe batch execution with row-level locks and slot availability recovery.
+     *
+     * @param int $hours Default 24 hours
+     * @return int Number of stale bookings cancelled
+     */
+    public function autoCancelStaleBookings(int $hours = 24): int
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT id, slot_id 
+            FROM `bookings` 
+            WHERE `status` = 'PENDING' 
+              AND `created_at` <= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? HOUR)
+        ");
+        $stmt->execute([$hours]);
+        $staleBookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $cancelledCount = 0;
+
+        foreach ($staleBookings as $b) {
+            $bookingId = (int) $b['id'];
+            $slotId = $b['slot_id'] ? (int) $b['slot_id'] : null;
+
+            try {
+                $this->pdo->beginTransaction();
+
+                $stmtLock = $this->pdo->prepare("SELECT id, status, student_user_id, tutor_user_id FROM `bookings` WHERE id = ? AND status = 'PENDING' FOR UPDATE");
+                $stmtLock->execute([$bookingId]);
+                $booking = $stmtLock->fetch(PDO::FETCH_ASSOC);
+
+                if (!$booking) {
+                    $this->pdo->rollBack();
+                    continue;
+                }
+
+                $stmtUpdate = $this->pdo->prepare("
+                    UPDATE `bookings` 
+                    SET `status` = ?, `updated_at` = UTC_TIMESTAMP() 
+                    WHERE id = ?
+                ");
+                $stmtUpdate->execute([self::STATUS_SYSTEM_CANCELLED, $bookingId]);
+
+                $stmtHistory = $this->pdo->prepare('
+                    INSERT INTO `booking_status_history` (
+                        `booking_id`, `changed_by_user_id`, `old_status`, `new_status`, `reason`, `metadata_json`, `created_at`
+                    ) VALUES (?, NULL, ?, ?, ?, NULL, UTC_TIMESTAMP())
+                ');
+                $stmtHistory->execute([
+                    $bookingId,
+                    self::STATUS_PENDING,
+                    self::STATUS_SYSTEM_CANCELLED,
+                    "Automatic {$hours}-hour no-response cancellation",
+                ]);
+
+                // Restore slot to PUBLISHED if capacity available and in future
+                if ($slotId !== null) {
+                    $stmtSlotCap = $this->pdo->prepare('SELECT max_students FROM `availability_slots` WHERE id = ?');
+                    $stmtSlotCap->execute([$slotId]);
+                    $slotCap = (int) ($stmtSlotCap->fetchColumn() ?: 1);
+
+                    $stmtActive = $this->pdo->prepare("
+                        SELECT COUNT(*) FROM `bookings` 
+                        WHERE `slot_id` = ? AND id != ? AND `status` IN ('PENDING', 'CONFIRMED')
+                    ");
+                    $stmtActive->execute([$slotId, $bookingId]);
+                    $remainingActive = (int) $stmtActive->fetchColumn();
+
+                    if ($remainingActive < $slotCap) {
+                        $stmtSlot = $this->pdo->prepare('
+                            UPDATE `availability_slots` 
+                            SET `status` = ?, `updated_at` = UTC_TIMESTAMP() 
+                            WHERE `id` = ? AND `starts_at_utc` > UTC_TIMESTAMP()
+                        ');
+                        $stmtSlot->execute([AvailabilityService::STATUS_PUBLISHED, $slotId]);
+                    }
+                }
+
+                $this->pdo->commit();
+                $cancelledCount++;
+
+                $this->audit->log(
+                    action: 'BOOKING_SYSTEM_CANCELLED',
+                    entityType: 'booking',
+                    entityId: $bookingId,
+                    actorUserId: null,
+                    metadata: [
+                        'old_status' => self::STATUS_PENDING,
+                        'new_status' => self::STATUS_SYSTEM_CANCELLED,
+                        'reason' => "Automatic {$hours}-hour no-response cancellation",
+                    ]
+                );
+
+                $this->logger->info("Auto-cancelled stale booking ID {$bookingId} (awaiting response > {$hours} hours)");
+            } catch (Throwable $e) {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+                $this->logger->error("Failed to auto-cancel booking ID {$bookingId}: " . $e->getMessage());
+            }
+        }
+
+        return $cancelledCount;
     }
 }

@@ -61,7 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null) {
 
         if ($action === 'confirm_booking') {
             try {
-                $bookingService->confirmBooking($bookingId, $currentUser, 'Accepted by tutor via portal');
+                $meetingLink = !empty($_POST['meeting_link']) ? trim((string) $_POST['meeting_link']) : null;
+                $bookingService->confirmBooking($bookingId, $currentUser, 'Accepted by tutor via portal', $meetingLink);
                 $successMessage = "Booking #{$bookingId} accepted and confirmed.";
             } catch (Throwable $e) {
                 $errorMessage = $e->getMessage();
@@ -74,14 +75,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null) {
             } catch (Throwable $e) {
                 $errorMessage = $e->getMessage();
             }
+        } elseif ($action === 'save_notes') {
+            try {
+                $notes = trim((string) ($_POST['notes'] ?? ''));
+                $visibility = (string) ($_POST['visibility'] ?? 'PARENT_VISIBLE');
+                $notesService = new \App\Services\LessonNotesService($db);
+                $notesService->createNote($bookingId, $notes, $visibility, $currentUser);
+                $successMessage = "Lesson notes saved for Booking #{$bookingId}.";
+            } catch (Throwable $e) {
+                $errorMessage = $e->getMessage();
+            }
         }
     }
 }
 
 $bookings = [];
+$bookingNotes = [];
 if ($currentUser !== null) {
     try {
         $bookings = $bookingService->listBookings($currentUser);
+        $notesService = new \App\Services\LessonNotesService($db);
+        foreach ($bookings as $b) {
+            $bookingNotes[$b['id']] = $notesService->getNotesForBooking((int)$b['id'], $currentUser);
+        }
     } catch (Throwable $e) {
         $errorMessage = $e->getMessage();
     }
@@ -93,6 +109,7 @@ View::render(
     'tutor-bookings',
     [
         'bookings' => $bookings,
+        'bookingNotes' => $bookingNotes,
         'currentUser' => $currentUser,
         'csrfToken' => $csrfToken,
         'successMessage' => $successMessage,

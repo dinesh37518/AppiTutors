@@ -15,9 +15,70 @@ $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
 match (true) {
     // 1. Marketing Homepage
     $requestUri === '/' || $requestUri === '/index.php' => (function () {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $db = \App\Database\Database::getConnection();
+        $bookingService = new \App\Services\BookingService($db);
+
+        $currentUserId = $_SESSION['user_id'] ?? null;
+        $currentUser = null;
+        if ($currentUserId !== null) {
+            $stmt = $db->prepare('SELECT * FROM `users` WHERE `id` = :id');
+            $stmt->execute([':id' => $currentUserId]);
+            $userRow = $stmt->fetch();
+            if ($userRow) {
+                $currentUser = \App\Auth\UserContext::fromDatabaseRow($userRow);
+            }
+        }
+
+        // Fallback: If no logged-in student, check if a student/parent exists for demo context
+        if ($currentUser === null) {
+            $stmt = $db->query("SELECT * FROM `users` WHERE `role` = 'STUDENT_PARENT' LIMIT 1");
+            $userRow = $stmt->fetch();
+            if ($userRow) {
+                $currentUser = \App\Auth\UserContext::fromDatabaseRow($userRow);
+            }
+        }
+
+        $bookings = [];
+        if ($currentUser !== null) {
+            try {
+                $bookings = $bookingService->listBookings($currentUser);
+            } catch (\Throwable $e) {
+                $bookings = [];
+            }
+        }
+
+        // Load Approved & Bookable Tutors for home page booking section
+        $stmtTutors = $db->query("
+            SELECT u.id, u.display_name, tp.headline, tp.qualifications, tp.subjects_json,
+                   (SELECT COUNT(*) FROM availability_slots s WHERE s.tutor_user_id = u.id AND s.status = 'PUBLISHED' AND s.starts_at_utc >= NOW()) as slot_count
+            FROM `users` u 
+            JOIN `tutor_profiles` tp ON u.id = tp.user_id 
+            WHERE u.status = 'ACTIVE' 
+              AND tp.approval_status = 'APPROVED' 
+              AND tp.dbs_status = 'VERIFIED'
+            ORDER BY (u.display_name = 'Dr. Alistair H.') DESC, slot_count DESC, u.id ASC
+            LIMIT 8
+        ");
+        $tutors = $stmtTutors->fetchAll(PDO::FETCH_ASSOC);
+
+        $selectedTutorId = isset($_GET['tutor_id']) ? (int)$_GET['tutor_id'] : (!empty($tutors) ? (int)$tutors[0]['id'] : 0);
+        $availableSlots = [];
+        if ($selectedTutorId > 0) {
+            $availableSlots = $bookingService->getAvailableSlotsForTutor($selectedTutorId);
+        }
+
         View::render(
             'home',
-            [],
+            [
+                'currentUser' => $currentUser,
+                'bookings' => $bookings,
+                'tutors' => $tutors,
+                'selectedTutorId' => $selectedTutorId,
+                'availableSlots' => $availableSlots,
+            ],
             'AppTutors UK — 1-to-1 Tutoring for Primary, GCSE & A-Level',
             'Professional UK tutoring platform connecting students and parents with verified, Enhanced DBS checked tutors across Primary, GCSE, and A-Level curricula.'
         );

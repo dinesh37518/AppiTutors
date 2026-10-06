@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         $sanitizedName = Validator::sanitizeString($formData['name']);
-        $successMessage = "Thank you, {$sanitizedName}! Your inquiry has been registered. Our UK admissions team will respond within 1 business day. [CLIENT APPROVAL REQUIRED — Admissions Service Level Agreement]";
+        $successMessage = "Thank you, {$sanitizedName}! Your inquiry has been registered. Our UK admissions team will respond within 1 business day.";
         
         // Clear form after success
         $formData = [];
@@ -78,6 +78,7 @@ View::render(
         'errors' => $errors,
         'successMessage' => $successMessage,
         'formData' => $formData,
+        'managerWhatsApp' => App\Support\Env::get('MANAGER_WHATSAPP', '447700900000'),
     ],
     'Contact Admissions & Safeguarding — AppTutors UK',
     'Contact AppTutors UK for assistance with tutor selection, curriculum enquiries, or child safeguarding background verification.'

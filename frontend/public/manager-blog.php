@@ -67,12 +67,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null && $currentUs
                     }
                     break;
 
+                case 'APPROVE':
+                    if ($postId <= 0) {
+                        $errorMessage = 'Valid post ID is required for approval.';
+                    } else {
+                        $appPost = $blogService->approvePost($currentUser, $postId);
+                        $successMessage = "Blog post '{$appPost['title']}' approved successfully.";
+                    }
+                    break;
+
+                case 'REJECT':
+                    if ($postId <= 0) {
+                        $errorMessage = 'Valid post ID is required for rejection.';
+                    } else {
+                        $reason = trim((string) ($_POST['reason'] ?? 'Editorial criteria not met'));
+                        $rejPost = $blogService->rejectPost($currentUser, $postId, $reason);
+                        $successMessage = "Blog post '{$rejPost['title']}' rejected.";
+                    }
+                    break;
+
                 case 'PUBLISH':
                     if ($postId <= 0) {
                         $errorMessage = 'Valid post ID is required for publishing.';
                     } else {
+                        $currentPost = $blogService->getPostById($postId, $currentUser);
+                        if ($currentPost['status'] === 'SUBMITTED') {
+                            $blogService->approvePost($currentUser, $postId);
+                        }
                         $pubPost = $blogService->publishPost($currentUser, $postId);
                         $successMessage = "Blog post '{$pubPost['title']}' published successfully.";
+                    }
+                    break;
+
+                case 'SEND_NEWSLETTER':
+                    if ($postId <= 0) {
+                        $errorMessage = 'Valid post ID is required for newsletter broadcast.';
+                    } else {
+                        $newsletterService = new \App\Services\NewsletterService($db);
+                        $result = $newsletterService->broadcastPublishedBlogPost($postId, $currentUser);
+                        $successMessage = "Newsletter successfully sent to {$result['sent_count']} subscriber(s) for '{$result['title']}'.";
                     }
                     break;
 

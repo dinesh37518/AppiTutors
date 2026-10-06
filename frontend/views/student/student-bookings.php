@@ -92,8 +92,40 @@
                                 </div>
 
                                 <?php if (!empty($b['inquiry_notes'])): ?>
-                                    <div style="font-size: 0.875rem; background-color: var(--color-navy-50); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); color: var(--color-navy-700); border-left: 3px solid var(--color-navy-300);">
-                                        <strong>Lesson Notes:</strong> <?= e($b['inquiry_notes']) ?>
+                                    <div style="font-size: 0.875rem; background-color: var(--color-navy-50); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); color: var(--color-navy-700); border-left: 3px solid var(--color-navy-300); margin-bottom: 0.5rem;">
+                                        <strong>Inquiry / Learning Goals:</strong> <?= e($b['inquiry_notes']) ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <!-- Meeting Link for confirmed class -->
+                                <?php if ($b['status'] === 'CONFIRMED' && !empty($b['meeting_link'])): ?>
+                                    <div style="margin-top: 0.5rem; padding: 0.75rem; background-color: #ecfdf5; border-left: 4px solid #10b981; border-radius: var(--radius-sm); margin-bottom: 0.5rem;">
+                                        <div style="font-weight: 700; color: #065f46; font-size: 0.875rem; margin-bottom: 0.35rem;">
+                                            Class Attendance Link
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                            <a href="<?= e($b['meeting_link']) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; background-color: #059669; border-color: #059669;">
+                                                &#127891; Join Online Class &rarr;
+                                            </a>
+                                            <span style="font-size: 0.8rem; color: #047857; word-break: break-all;"><?= e($b['meeting_link']) ?></span>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <!-- Tutor Lesson Notes for Attended Classes -->
+                                <?php if (!empty($bookingNotes[$b['id']])): ?>
+                                    <div style="margin-top: 0.5rem; padding: 0.75rem; background-color: var(--color-navy-50); border-radius: var(--radius-sm); border: 1px solid var(--color-navy-200);">
+                                        <div style="font-weight: 700; color: var(--color-navy-900); font-size: 0.875rem; margin-bottom: 0.35rem;">
+                                            Tutor Lesson Notes &amp; Feedback:
+                                        </div>
+                                        <?php foreach ($bookingNotes[$b['id']] as $note): ?>
+                                            <div style="font-size: 0.85rem; background: #fff; border: 1px solid var(--color-navy-100); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); margin-top: 0.35rem;">
+                                                <div style="color: var(--color-navy-800); white-space: pre-wrap;"><?= e($note['content']) ?></div>
+                                                <div style="font-size: 0.75rem; color: var(--color-navy-500); margin-top: 0.25rem;">
+                                                    Tutor Note logged on: <?= e(substr($note['created_at'] ?? '', 0, 16)) ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>

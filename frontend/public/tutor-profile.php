@@ -22,6 +22,10 @@ $dbsService = new DbsService($db);
 $successMessage = '';
 $errorMessage = '';
 
+if (!empty($_GET['welcome'])) {
+    $successMessage = 'Welcome to the AppTutors UK Educator Portal! Your academic qualifications and DBS credentials have been received and tutor access is active.';
+}
+
 // Determine active tutor context (from session, auth token, or test param)
 $currentUserId = $_SESSION['user_id'] ?? (isset($_GET['id']) ? (int) $_GET['id'] : null);
 $currentUser = null;
@@ -50,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null) {
     if (!Csrf::validateToken($csrfToken)) {
         $errorMessage = 'CSRF validation failed. Please refresh and try again.';
     } else {
-        $action = $_POST['action'] ?? 'update_profile';
+        $action = $_POST['action'] ?? $_POST['form_action'] ?? 'update_profile';
 
         if ($action === 'update_profile') {
             try {
@@ -70,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null) {
             }
         } elseif ($action === 'submit_dbs') {
             try {
-                $certNumber = $_POST['dbs_certificate_number'] ?? '';
-                $uploadedFile = $_FILES['dbs_file'] ?? null;
+                $certNumber = $_POST['certificate_number'] ?? $_POST['dbs_certificate_number'] ?? '';
+                $uploadedFile = $_FILES['dbs_document'] ?? $_FILES['dbs_file'] ?? null;
                 $dbsService->submitDbs($currentUser->id, $certNumber, $uploadedFile, $currentUser);
                 $successMessage = 'Enhanced DBS certificate submitted for managerial safeguarding review.';
             } catch (Throwable $e) {
@@ -82,11 +86,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null) {
 }
 
 $profile = null;
+$dbsMeta = null;
 if ($currentUser !== null) {
     try {
         $profile = $tutorService->getProfile($currentUser->id, $currentUser);
     } catch (Throwable $e) {
         $errorMessage = $e->getMessage();
+    }
+
+    $metaPath = dirname(__DIR__, 2) . "/storage/private/dbs/meta_{$currentUser->id}.json";
+    if (file_exists($metaPath)) {
+        $dbsMeta = json_decode((string) file_get_contents($metaPath), true) ?: null;
     }
 }
 
@@ -97,6 +107,7 @@ View::render(
     [
         'profile' => $profile,
         'currentUser' => $currentUser,
+        'dbsMeta' => $dbsMeta,
         'csrfToken' => $csrfToken,
         'successMessage' => $successMessage,
         'errorMessage' => $errorMessage,

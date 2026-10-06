@@ -15,6 +15,9 @@ $e = fn($v) => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES | ENT_SUBSTITUTE
     <?php if (!empty($child_name)): ?>
         <p><strong>Student:</strong> <?= $e($child_name) ?></p>
     <?php endif; ?>
+    <?php if (!empty($meeting_link)): ?>
+        <p><strong>Class Attendance Link:</strong> <a href="<?= $e($meeting_link) ?>" target="_blank" style="color: #0284c7; font-weight: 600;"><?= $e($meeting_link) ?></a></p>
+    <?php endif; ?>
     <p><strong>Status:</strong> <span class="badge badge-confirmed">CONFIRMED</span></p>
 </div>
 

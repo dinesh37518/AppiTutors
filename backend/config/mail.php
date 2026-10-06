@@ -16,4 +16,11 @@ return [
         'address' => Env::get('EMAIL_FROM_ADDRESS', 'noreply@tutoringplatform.co.uk'),
         'name' => Env::get('EMAIL_FROM_NAME', 'UK Tutoring Platform'),
     ],
+    'emailjs' => [
+        'service_id' => Env::get('EMAILJS_SERVICE_ID', ''),
+        'template_id' => Env::get('EMAILJS_TEMPLATE_ID', ''),
+        'public_key' => Env::get('EMAILJS_PUBLIC_KEY', ''),
+        'private_key' => Env::get('EMAILJS_PRIVATE_KEY', ''),
+        'api_url' => Env::get('EMAILJS_API_URL', 'https://api.emailjs.com/api/v1.0/email/send'),
+    ],
 ];

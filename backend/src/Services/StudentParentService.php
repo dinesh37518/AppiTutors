@@ -93,6 +93,13 @@ class StudentParentService
             throw new ValidationException('Postcode cannot exceed 20 characters.', 'VALIDATION_ERROR', 422, ['postcode' => 'Too long']);
         }
 
+        $parentEmail = !empty($data['parent_email']) ? strtolower(trim((string) $data['parent_email'])) : null;
+        if ($parentEmail !== null) {
+            if (!Validator::validateEmail($parentEmail)) {
+                throw new ValidationException('Invalid parent email address.', 'VALIDATION_ERROR', 422, ['parent_email' => 'Invalid email']);
+            }
+        }
+
         // 4. Atomic Registration Transaction
         $this->pdo->beginTransaction();
         try {
@@ -105,10 +112,10 @@ class StudentParentService
             $userId = (int) $this->pdo->lastInsertId();
 
             $stmtProfile = $this->pdo->prepare(
-                'INSERT INTO `student_profiles` (`user_id`, `phone`, `postcode`, `created_at`, `updated_at`)
-                 VALUES (?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())'
+                'INSERT INTO `student_profiles` (`user_id`, `phone`, `postcode`, `parent_email`, `created_at`, `updated_at`)
+                 VALUES (?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())'
             );
-            $stmtProfile->execute([$userId, $phone, $postcode]);
+            $stmtProfile->execute([$userId, $phone, $postcode, $parentEmail]);
 
             $this->pdo->commit();
 
@@ -136,6 +143,7 @@ class StudentParentService
                     'user_id' => $userId,
                     'phone' => $phone,
                     'postcode' => $postcode,
+                    'parent_email' => $parentEmail,
                 ],
             ];
         } catch (Throwable $e) {
@@ -169,7 +177,7 @@ class StudentParentService
 
         $stmt = $this->pdo->prepare(
             'SELECT u.id, u.firebase_uid, u.email, u.display_name, u.role, u.status, u.created_at,
-                    sp.phone, sp.postcode, sp.updated_at
+                    sp.phone, sp.postcode, sp.parent_email, sp.updated_at
              FROM `users` u
              LEFT JOIN `student_profiles` sp ON u.id = sp.user_id
              WHERE u.id = ? LIMIT 1'
@@ -190,6 +198,7 @@ class StudentParentService
             'status' => (string) $row['status'],
             'phone' => $row['phone'] !== null ? (string) $row['phone'] : null,
             'postcode' => $row['postcode'] !== null ? (string) $row['postcode'] : null,
+            'parent_email' => $row['parent_email'] !== null ? (string) $row['parent_email'] : null,
             'created_at' => (string) $row['created_at'],
             'updated_at' => $row['updated_at'] !== null ? (string) $row['updated_at'] : (string) $row['created_at'],
         ];
@@ -258,6 +267,15 @@ class StudentParentService
             }
         }
 
+        $parentEmail = null;
+        $hasParentEmail = array_key_exists('parent_email', $data);
+        if ($hasParentEmail) {
+            $parentEmail = !empty($data['parent_email']) ? strtolower(trim((string) $data['parent_email'])) : null;
+            if ($parentEmail !== null && !Validator::validateEmail($parentEmail)) {
+                throw new ValidationException('Invalid parent email address.', 'VALIDATION_ERROR', 422, ['parent_email' => 'Invalid email']);
+            }
+        }
+
         $this->pdo->beginTransaction();
         try {
             if ($displayName !== null) {
@@ -265,7 +283,7 @@ class StudentParentService
                 $stmtUser->execute([$displayName, $userId]);
             }
 
-            if ($hasPhone || $hasPostcode) {
+            if ($hasPhone || $hasPostcode || $hasParentEmail) {
                 // Upsert student_profiles
                 $stmtCheck = $this->pdo->prepare('SELECT `user_id` FROM `student_profiles` WHERE `user_id` = ? LIMIT 1');
                 $stmtCheck->execute([$userId]);
@@ -280,6 +298,10 @@ class StudentParentService
                         $setClauses[] = '`postcode` = ?';
                         $params[] = $postcode;
                     }
+                    if ($hasParentEmail) {
+                        $setClauses[] = '`parent_email` = ?';
+                        $params[] = $parentEmail;
+                    }
                     $setClauses[] = '`updated_at` = UTC_TIMESTAMP()';
                     $params[] = $userId;
 
@@ -288,10 +310,10 @@ class StudentParentService
                     $stmtUpdate->execute($params);
                 } else {
                     $stmtInsert = $this->pdo->prepare(
-                        'INSERT INTO `student_profiles` (`user_id`, `phone`, `postcode`, `created_at`, `updated_at`)
-                         VALUES (?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())'
+                        'INSERT INTO `student_profiles` (`user_id`, `phone`, `postcode`, `parent_email`, `created_at`, `updated_at`)
+                         VALUES (?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())'
                     );
-                    $stmtInsert->execute([$userId, $phone, $postcode]);
+                    $stmtInsert->execute([$userId, $phone, $postcode, $parentEmail]);
                 }
             }
 

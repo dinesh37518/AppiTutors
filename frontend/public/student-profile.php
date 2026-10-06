@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null) {
                 'display_name' => $_POST['display_name'] ?? '',
                 'phone' => $_POST['phone'] ?? '',
                 'postcode' => $_POST['postcode'] ?? '',
+                'parent_email' => !empty($_POST['parent_email']) ? trim((string)$_POST['parent_email']) : null,
             ];
 
             $studentParentService->updateProfile($currentUser->id, $updateData, $currentUser);

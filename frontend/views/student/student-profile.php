@@ -104,6 +104,24 @@
                     </small>
                 </div>
 
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="parent_email" class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.35rem;">
+                        Parent Email Address
+                    </label>
+                    <input type="email"
+                           id="parent_email"
+                           name="parent_email"
+                           class="form-control"
+                           maxlength="255"
+                           placeholder="e.g. parent@example.co.uk"
+                           value="<?= e($profile['parent_email'] ?? '') ?>"
+                           style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-navy-200); border-radius: var(--radius-sm); font-size: 1rem;"
+                           aria-describedby="parent_email_hint">
+                    <small id="parent_email_hint" style="color: var(--color-navy-500); font-size: 0.825rem; display: block; margin-top: 0.25rem;">
+                        Authoritative email address for parent notifications, lesson notes, and scheduling updates.
+                    </small>
+                </div>
+
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                     <div class="form-group">
                         <label for="phone" class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.35rem;">

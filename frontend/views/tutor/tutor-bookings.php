@@ -14,9 +14,12 @@
                         Manage student lesson inquiries, accept new sessions, and review your tutoring commitments.
                     </p>
                 </div>
-                <div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <a href="/tutor-availability.php" class="btn btn-outline btn-sm">
-                        Availability Calendar &rarr;
+                        Availability Calendar
+                    </a>
+                    <a href="/tutor-blog.php" class="btn btn-outline btn-sm">
+                        Blog Articles
                     </a>
                 </div>
             </div>
@@ -91,24 +94,36 @@
                                 <?php endif; ?>
                             </div>
 
-                            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <div style="min-width: 280px; display: flex; flex-direction: column; gap: 0.75rem;">
                                 <!-- Accept / Confirm Form -->
-                                <form method="POST" action="/tutor-bookings.php" style="margin: 0;">
+                                <form method="POST" action="/tutor-bookings.php" style="margin: 0; background: var(--color-navy-50); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--color-navy-200);">
                                     <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
                                     <input type="hidden" name="action" value="confirm_booking">
                                     <input type="hidden" name="booking_id" value="<?= e((string)$b['id']) ?>">
-                                    <button type="submit" class="btn btn-primary btn-sm" id="btn-confirm-<?= e((string)$b['id']) ?>">
-                                        &#10003; Accept & Confirm
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <label for="meeting-link-<?= e((string)$b['id']) ?>" style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-navy-700); margin-bottom: 0.25rem;">
+                                            Meeting Link (Google Meet / Zoom):
+                                        </label>
+                                        <input type="url" id="meeting-link-<?= e((string)$b['id']) ?>" name="meeting_link" placeholder="https://meet.google.com/..." style="width: 100%; box-sizing: border-box; font-size: 0.8rem; padding: 0.35rem 0.5rem; border: 1px solid var(--color-navy-300); border-radius: var(--radius-sm);">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm" id="btn-confirm-<?= e((string)$b['id']) ?>" style="width: 100%;">
+                                        &#10003; Accept &amp; Confirm
                                     </button>
                                 </form>
 
                                 <!-- Reject Form -->
-                                <form method="POST" action="/tutor-bookings.php" onsubmit="return confirm('Are you sure you want to decline this booking request? The slot will be reopened to other students.');" style="margin: 0;">
+                                <form method="POST" action="/tutor-bookings.php" onsubmit="return confirm('Are you sure you want to decline this booking request? The slot will be reopened to other students.');" style="margin: 0; background: #fff5f5; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid #fed7d7;">
                                     <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
                                     <input type="hidden" name="action" value="reject_booking">
                                     <input type="hidden" name="booking_id" value="<?= e((string)$b['id']) ?>">
-                                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-rose-600); border-color: var(--color-rose-100);" id="btn-reject-<?= e((string)$b['id']) ?>">
-                                        Decline
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <label for="reject-reason-<?= e((string)$b['id']) ?>" style="display: block; font-size: 0.75rem; font-weight: 600; color: #9b2c2c; margin-bottom: 0.25rem;">
+                                            Decline Reason:
+                                        </label>
+                                        <input type="text" id="reject-reason-<?= e((string)$b['id']) ?>" name="reason" placeholder="e.g. Schedule conflict, Subject mismatch" required style="width: 100%; box-sizing: border-box; font-size: 0.8rem; padding: 0.35rem 0.5rem; border: 1px solid #feb2b2; border-radius: var(--radius-sm);">
+                                    </div>
+                                    <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-rose-600); border-color: var(--color-rose-300); width: 100%;" id="btn-reject-<?= e((string)$b['id']) ?>">
+                                        Decline Request
                                     </button>
                                 </form>
                             </div>
@@ -133,26 +148,83 @@
                     No past or confirmed bookings on record yet.
                 </p>
             <?php else: ?>
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
                     <?php foreach ($historyBookings as $b): ?>
-                        <div style="padding: 1.25rem; border: 1px solid var(--color-navy-200); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                            <div>
-                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                    <strong>Booking #<?= e((string)$b['id']) ?></strong> &mdash; <?= e($b['student_name']) ?>
-                                    <?php if ($b['status'] === 'CONFIRMED'): ?>
-                                        <span class="badge badge-verified">CONFIRMED</span>
-                                    <?php elseif ($b['status'] === 'REJECTED'): ?>
-                                        <span class="badge badge-placeholder">DECLINED</span>
-                                    <?php elseif ($b['status'] === 'CANCELLED'): ?>
-                                        <span class="badge badge-placeholder">CANCELLED</span>
-                                    <?php else: ?>
-                                        <span class="badge badge-primary"><?= e($b['status']) ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <div style="font-size: 0.875rem; color: var(--color-navy-600);">
-                                    <?= !empty($b['confirmed_starts_at_utc']) ? 'Session time: ' . e($b['confirmed_starts_at_utc']) : 'Requested time: ' . e($b['proposed_starts_at_utc'] ?? '') ?>
+                        <div style="padding: 1.25rem; border: 1px solid var(--color-navy-200); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                        <strong>Booking #<?= e((string)$b['id']) ?></strong> &mdash; <?= e($b['student_name']) ?>
+                                        <?php if ($b['status'] === 'CONFIRMED'): ?>
+                                            <span class="badge badge-verified">CONFIRMED</span>
+                                        <?php elseif ($b['status'] === 'REJECTED'): ?>
+                                            <span class="badge badge-placeholder">DECLINED</span>
+                                        <?php elseif ($b['status'] === 'CANCELLED' || $b['status'] === 'SYSTEM_CANCELLED'): ?>
+                                            <span class="badge badge-placeholder"><?= e($b['status']) ?></span>
+                                        <?php else: ?>
+                                            <span class="badge badge-primary"><?= e($b['status']) ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--color-navy-600);">
+                                        <?= !empty($b['confirmed_starts_at_utc']) ? 'Session time: ' . e($b['confirmed_starts_at_utc']) : 'Requested time: ' . e($b['proposed_starts_at_utc'] ?? '') ?>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- Meeting Link display for confirmed bookings -->
+                            <?php if (!empty($b['meeting_link'])): ?>
+                                <div style="font-size: 0.875rem; background: var(--color-navy-50); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); border-left: 3px solid var(--color-primary-500); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                                    <span><strong>Attendance Meeting Link:</strong> <a href="<?= e($b['meeting_link']) ?>" target="_blank" rel="noopener noreferrer" style="color: var(--color-primary-600);"><?= e($b['meeting_link']) ?></a></span>
+                                    <a href="<?= e($b['meeting_link']) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                        Open Classroom &rarr;
+                                    </a>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- Lesson Notes Component (for Confirmed / Completed Bookings) -->
+                            <?php if ($b['status'] === 'CONFIRMED' || $b['status'] === 'COMPLETED'): ?>
+                                <div style="margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px dashed var(--color-navy-200);">
+                                    <div style="font-size: 0.875rem; font-weight: 700; color: var(--color-navy-900); margin-bottom: 0.5rem;">
+                                        Lesson Notes & Student Progress
+                                    </div>
+
+                                    <?php if (!empty($bookingNotes[$b['id']])): ?>
+                                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                            <?php foreach ($bookingNotes[$b['id']] as $note): ?>
+                                                <div style="font-size: 0.85rem; background: #fff; border: 1px solid var(--color-navy-200); padding: 0.65rem; border-radius: var(--radius-sm);">
+                                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--color-navy-500); margin-bottom: 0.25rem;">
+                                                        <span>Logged: <?= e(substr($note['created_at'] ?? '', 0, 16)) ?></span>
+                                                        <span class="badge <?= $note['visibility'] === 'PARENT_VISIBLE' ? 'badge-verified' : 'badge-primary' ?>" style="font-size: 0.7rem;">
+                                                            <?= $note['visibility'] === 'PARENT_VISIBLE' ? 'Parent & Student Visible' : 'Internal Only' ?>
+                                                        </span>
+                                                    </div>
+                                                    <div style="color: var(--color-navy-800); white-space: pre-wrap;"><?= e($note['content']) ?></div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <!-- Add New Note Form -->
+                                    <form method="POST" action="/tutor-bookings.php" style="margin: 0; background: var(--color-navy-50); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--color-navy-200);">
+                                        <input type="hidden" name="csrf_token" value="<?= e($csrfToken) ?>">
+                                        <input type="hidden" name="action" value="save_notes">
+                                        <input type="hidden" name="booking_id" value="<?= e((string)$b['id']) ?>">
+                                        <textarea name="notes" rows="2" placeholder="Record session feedback, topics covered, or homework..." required style="width: 100%; box-sizing: border-box; font-size: 0.85rem; padding: 0.5rem; border: 1px solid var(--color-navy-300); border-radius: var(--radius-sm); margin-bottom: 0.5rem;"></textarea>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                                            <label style="font-size: 0.8rem; color: var(--color-navy-700);">
+                                                Visibility:
+                                                <select name="visibility" style="font-size: 0.8rem; padding: 0.25rem 0.5rem; border: 1px solid var(--color-navy-300); border-radius: var(--radius-sm);">
+                                                    <option value="PARENT_VISIBLE">Parent &amp; Student Visible</option>
+                                                    <option value="INTERNAL">Tutor Internal Only</option>
+                                                </select>
+                                            </label>
+                                            <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                                                Save Lesson Notes
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

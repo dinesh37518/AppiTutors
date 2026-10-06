@@ -76,9 +76,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $currentUser !== null && $currentUs
                     $tutorService->managerApproveTutor($tutorId, $currentUser);
                     $successMessage = "Tutor #{$tutorId} approved successfully.";
                 } elseif ($action === 'REJECT') {
-                    $reason = $_POST['reason'] ?? 'Application does not meet platform criteria.';
+                    $reason = trim((string)($_POST['reason'] ?? ''));
+                    if (empty($reason)) {
+                        $preset = trim((string)($_POST['reason_preset'] ?? ''));
+                        $custom = trim((string)($_POST['reason_custom'] ?? ''));
+                        if ($preset === 'Other' || empty($preset)) {
+                            $reason = !empty($custom) ? $custom : 'Application criteria not met';
+                        } else {
+                            $reason = !empty($custom) ? "{$preset} - {$custom}" : $preset;
+                        }
+                    }
                     $tutorService->managerRejectTutor($tutorId, $reason, $currentUser);
-                    $successMessage = "Tutor #{$tutorId} application rejected.";
+                    $successMessage = "Tutor #{$tutorId} application rejected with reason: '{$reason}'.";
                 } elseif ($action === 'SUSPEND') {
                     $reason = $_POST['reason'] ?? 'Manager administrative suspension.';
                     $tutorService->managerSuspendTutor($tutorId, $reason, $currentUser);

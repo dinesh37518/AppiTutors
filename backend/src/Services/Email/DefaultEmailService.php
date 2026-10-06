@@ -8,6 +8,7 @@ use App\Logging\Logger;
 use App\Services\AuditService;
 use App\Services\EmailService;
 use App\Services\Email\Adapters\ArrayEmailAdapter;
+use App\Services\Email\Adapters\EmailJsEmailAdapter;
 use App\Services\Email\Adapters\LogEmailAdapter;
 use App\Services\Email\Adapters\NullEmailAdapter;
 use App\Services\Email\Adapters\SmtpEmailAdapter;
@@ -305,6 +306,7 @@ class DefaultEmailService implements EmailService
             'log' => new LogEmailAdapter($this->logger),
             'null', 'disabled' => new NullEmailAdapter(),
             'smtp' => new SmtpEmailAdapter($this->config, $this->logger),
+            'emailjs' => new EmailJsEmailAdapter($this->config, $this->logger),
             default => new ArrayEmailAdapter(),
         };
     }

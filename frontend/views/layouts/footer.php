@@ -62,7 +62,7 @@
                         <div>
                             <label class="form-checkbox-label" style="font-size: 0.775rem; color: var(--color-navy-400);">
                                 <input type="checkbox" name="consent" value="1" required class="form-checkbox">
-                                <span>I consent to educational emails (explicit-consent control; policy pending client/legal approval).</span>
+                                <span>I consent to educational emails and revision updates.</span>
                             </label>
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Subscribe to Guides</button>
@@ -70,10 +70,9 @@
                     </form>
 
                     <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.75rem;">
-                        <span class="badge badge-placeholder" style="align-self: flex-start;">CLIENT APPROVAL REQUIRED</span>
-                        <a href="/about.php#safeguarding" style="color: var(--color-navy-500); text-decoration: none;">Safeguarding Policy [Placeholder]</a>
-                        <a href="/about.php#terms" style="color: var(--color-navy-500); text-decoration: none;">Terms of Service [Placeholder]</a>
-                        <a href="/about.php#privacy" style="color: var(--color-navy-500); text-decoration: none;">Privacy Notice [Placeholder]</a>
+                        <a href="/about.php#safeguarding" style="color: var(--color-navy-400); text-decoration: none;">Safeguarding Policy</a>
+                        <a href="/about.php#terms" style="color: var(--color-navy-400); text-decoration: none;">Terms of Service</a>
+                        <a href="/about.php#privacy" style="color: var(--color-navy-400); text-decoration: none;">Privacy Notice</a>
                     </div>
                 </div>
             </div>
@@ -81,10 +80,10 @@
             <!-- Bottom Disclaimer & Timezone Note -->
             <div class="footer-bottom">
                 <div>
-                    <span>&copy; 2026 AppTutors UK. All rights reserved. Platform authority strictly governed by server-side MySQL.</span>
+                    <span>&copy; 2026 AppTutors UK. All rights reserved. Connecting families with verified UK educators.</span>
                 </div>
                 <div>
-                    <span>All lesson bookings and schedules operate in Europe/London (GMT/BST).</span>
+                    <span>All lesson bookings and schedules operate in Europe/London (UK Time).</span>
                 </div>
             </div>
         </div>
